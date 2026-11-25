@@ -35,7 +35,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #eadbc8;
+      background-color: #efe3d2;
       font-family: 'IBM Plex Mono', monospace;
       user-select: none;
     }
@@ -62,25 +62,20 @@
       overflow: hidden;
     }
 
-    /* Fallback default centering so screen displays instantly before WebGL calculation */
     #crt-screen-ui {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: 0;
+      left: 0;
       transform-origin: 0 0;
-      background: radial-gradient(circle at 50% 45%, #191206 0%, #0d0a04 72%, #070502 100%);
+      background: radial-gradient(circle at 50% 45%, #1a1206 0%, #0d0a04 72%, #070502 100%);
       color: var(--amber-bright);
-      border-radius: 28px;
+      border-radius: 26px;
       overflow: hidden;
       pointer-events: auto;
-      box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.92), inset 0 0 10px rgba(255, 176, 0, 0.14);
-      width: 90vw;
-      max-width: 1020px;
-      height: 82vh;
-      max-height: 760px;
-      opacity: 1;
-      transition: opacity 0.2s ease;
+      box-shadow:
+        inset 0 0 36px rgba(0, 0, 0, 0.92),
+        inset 0 0 12px rgba(255, 176, 0, 0.16);
+      will-change: transform;
     }
 
     .crt-scanlines {
@@ -90,7 +85,7 @@
         to bottom,
         rgba(0, 0, 0, 0) 0px,
         rgba(0, 0, 0, 0) 3px,
-        rgba(0, 0, 0, 0.22) 4px
+        rgba(0, 0, 0, 0.24) 4px
       );
       pointer-events: none;
       z-index: 40;
@@ -106,36 +101,9 @@
     }
 
     @keyframes crtSubtleFlicker {
-      0%, 100% { opacity: 0.8; }
+      0%, 100% { opacity: 0.75; }
       50% { opacity: 1; }
-    }
-
-    .crt-scanlines {
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0) 0px,
-        rgba(0, 0, 0, 0) 3px,
-        rgba(0, 0, 0, 0.28) 4px
-      );
-      pointer-events: none;
-      z-index: 40;
-    }
-
-    .crt-flicker {
-      position: absolute;
-      inset: 0;
-      background: rgba(255, 184, 30, 0.018);
-      animation: crtSubtleFlicker 4.5s infinite;
-      pointer-events: none;
-      z-index: 41;
-    }
-
-    @keyframes crtSubtleFlicker {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 1; }
-      52% { opacity: 0.82; }
+      52% { opacity: 0.84; }
       54% { opacity: 0.98; }
     }
 
@@ -155,12 +123,12 @@
 
     .amber-text {
       color: var(--amber-bright);
-      text-shadow: 0 0 10px rgba(255, 176, 0, 0.48), 0 0 2px rgba(255, 190, 46, 0.85);
+      text-shadow: 0 0 10px rgba(255, 176, 0, 0.45), 0 0 2px rgba(255, 190, 46, 0.85);
     }
 
     .amber-text-soft {
       color: var(--amber-main);
-      text-shadow: 0 0 6px rgba(255, 176, 0, 0.32);
+      text-shadow: 0 0 6px rgba(255, 176, 0, 0.3);
     }
 
     .desktop-icon {
@@ -187,7 +155,7 @@
     }
 
     .crt-dock {
-      background: rgba(20, 14, 4, 0.9);
+      background: rgba(20, 14, 4, 0.92);
       border-top: 2px solid rgba(255, 176, 0, 0.45);
       z-index: 25;
     }
@@ -214,7 +182,7 @@
 
     .crt-window {
       position: absolute;
-      inset: 28px 34px 66px 34px;
+      inset: 24px 28px 62px 28px;
       background: #120d05;
       border: 2px solid var(--amber-main);
       border-radius: 12px;
@@ -258,6 +226,10 @@
       font-weight: 700;
       cursor: pointer;
       transition: background-color 0.15s ease, color 0.15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .amber-btn:hover {
@@ -286,7 +258,7 @@
       top: 18px;
       left: 50%;
       transform: translateX(-50%) translateY(-120px);
-      background: rgba(18, 13, 5, 0.95);
+      background: rgba(18, 13, 5, 0.96);
       border: 2px solid #ffbe2e;
       color: #ffbe2e;
       padding: 10px 18px;
@@ -304,6 +276,40 @@
     #easter-egg-toast.show {
       transform: translateX(-50%) translateY(0);
     }
+
+    /* Streamlined full-screen CRT view on phones */
+    @media (max-width: 767px) {
+      html, body {
+        overflow-y: auto;
+        background-color: #0b0904;
+      }
+
+      #webgl-canvas {
+        display: none;
+      }
+
+      #crt-overlay-stage {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        min-height: 100vh;
+        overflow: visible;
+      }
+
+      #crt-screen-ui {
+        position: relative !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        height: auto !important;
+        transform: none !important;
+        border-radius: 0 !important;
+      }
+
+      .crt-window {
+        position: fixed;
+        inset: 14px 12px 68px 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -311,82 +317,90 @@
 
   <div id="easter-egg-toast" role="status" aria-live="polite"></div>
 
-  <!-- Synchronized 3D CRT Screen Desktop Overlay -->
   <div id="crt-overlay-stage">
-    <div id="crt-screen-ui" class="flex flex-col justify-between will-change-transform">
+    <div id="crt-screen-ui" class="flex flex-col justify-between">
       <div class="crt-scanlines"></div>
       <div class="crt-flicker"></div>
       <div class="crt-glass-sheen"></div>
 
-      <!-- Main Desktop Content -->
-      <div class="relative z-20 flex-1 flex flex-col justify-between px-7 pt-6 pb-3 min-h-0">
-        <div class="flex items-start justify-between gap-4 min-h-0 flex-1">
-          <!-- Desktop Folders & Shortcuts -->
-          <div class="grid grid-cols-2 gap-x-4 gap-y-4 shrink-0">
+      <!-- Main CRT Desktop Area -->
+      <div class="relative z-20 flex-1 flex flex-col justify-between px-4 sm:px-7 pt-5 sm:pt-6 pb-3 min-h-0">
+        <div class="flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-5 min-h-0 flex-1">
+          <!-- Desktop Folders -->
+          <div class="grid grid-cols-4 sm:grid-cols-2 gap-2 sm:gap-x-4 sm:gap-y-4 shrink-0 w-full sm:w-auto">
             <!-- Work -->
-            <button type="button" class="desktop-icon w-28 sm:w-36" onclick="openAppWindow('win-work')" aria-label="Open Work folder">
-              <svg viewBox="0 0 32 24" class="w-14 h-14 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
+            <button type="button" class="desktop-icon w-full sm:w-36" onclick="openAppWindow('win-work')" aria-label="Open Work folder">
+              <svg viewBox="0 0 32 24" class="w-11 h-11 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
                 <path d="M2 5 H12 L15 8 H30 V22 H2 Z" fill="rgba(255,190,46,0.18)" />
               </svg>
-              <span class="pixel-font text-base sm:text-lg amber-text mt-2 leading-tight font-bold">Work</span>
+              <span class="pixel-font text-base sm:text-xl amber-text mt-1.5 leading-tight font-bold">Work</span>
             </button>
 
             <!-- About Me -->
-            <button type="button" class="desktop-icon w-28 sm:w-36" onclick="openAppWindow('win-about')" aria-label="Open About me">
-              <svg viewBox="0 0 26 30" class="w-14 h-14 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
+            <button type="button" class="desktop-icon w-full sm:w-36" onclick="openAppWindow('win-about')" aria-label="Open About me">
+              <svg viewBox="0 0 26 30" class="w-11 h-11 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
                 <path d="M4 2 H17 L22 7 V28 H4 Z" fill="rgba(255,190,46,0.18)" />
                 <line x1="8" y1="14" x2="18" y2="14" />
                 <line x1="8" y1="19" x2="18" y2="19" />
               </svg>
-              <span class="pixel-font text-base sm:text-lg amber-text mt-2 leading-tight font-bold">About me</span>
+              <span class="pixel-font text-base sm:text-xl amber-text mt-1.5 leading-tight font-bold">About me</span>
             </button>
 
             <!-- Contact -->
-            <button type="button" class="desktop-icon w-28 sm:w-36" onclick="openAppWindow('win-contact')" aria-label="Open Contact form">
-              <svg viewBox="0 0 32 24" class="w-14 h-14 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
+            <button type="button" class="desktop-icon w-full sm:w-36" onclick="openAppWindow('win-contact')" aria-label="Open Contact form">
+              <svg viewBox="0 0 32 24" class="w-11 h-11 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
                 <rect x="2" y="4" width="28" height="17" fill="rgba(255,190,46,0.18)" />
                 <polyline points="3,5 16,14 29,5" />
               </svg>
-              <span class="pixel-font text-base sm:text-lg amber-text mt-2 leading-tight font-bold">Contact</span>
+              <span class="pixel-font text-base sm:text-xl amber-text mt-1.5 leading-tight font-bold">Contact</span>
             </button>
 
             <!-- CV PDF in New Tab -->
-            <a href="./Resume_SofianSarrag.pdf" target="_blank" rel="noopener noreferrer" class="desktop-icon w-28 sm:w-36" aria-label="Open Sofian Sarrag CV PDF in new tab">
-              <svg viewBox="0 0 28 30" class="w-14 h-14 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
+            <a href="./Resume_SofianSarrag.pdf" target="_blank" rel="noopener noreferrer" class="desktop-icon w-full sm:w-36" aria-label="Open Sofian Sarrag CV PDF in new tab">
+              <svg viewBox="0 0 28 30" class="w-11 h-11 sm:w-16 sm:h-16 fill-none stroke-[#FFBE2E]" stroke-width="2.4" shape-rendering="crispEdges">
                 <path d="M3 2 H25 V28 H3 Z" fill="rgba(255,190,46,0.2)" />
                 <rect x="7" y="4" width="12" height="8" />
                 <rect x="7" y="17" width="14" height="9" />
               </svg>
-              <span class="pixel-font text-base sm:text-lg amber-text mt-2 leading-tight font-bold">CV</span>
+              <span class="pixel-font text-base sm:text-xl amber-text mt-1.5 leading-tight font-bold">CV</span>
             </a>
           </div>
 
-          <!-- Bio & Prominent Typed Name -->
-          <div class="flex-1 flex flex-col justify-between items-start sm:items-end text-left sm:text-right min-h-0 w-full pl-0 sm:pl-4">
-            <div class="max-w-xl md:max-w-2xl mt-1 sm:mt-2">
-              <p class="text-2xl sm:text-3xl md:text-[34px] leading-snug amber-text font-bold">
-                Software Engineer &bull; Location: Tirana, Albania.<br />
-                Java, AWS, MongoDB, Python, Haskell, Node.JS, Web Development, React.
+          <!-- Bio, Skill Pills & Typed Hero Name -->
+          <div class="flex-1 flex flex-col justify-between items-start sm:items-end text-left sm:text-right min-h-0 w-full">
+            <div class="max-w-2xl mt-0.5 sm:mt-1">
+              <p class="text-lg sm:text-2xl md:text-[28px] leading-snug amber-text font-bold">
+                Software Engineer &bull; Location: Tirana, Albania
               </p>
+              <div class="flex flex-wrap sm:justify-end gap-1.5 sm:gap-2 mt-2.5">
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">Java</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">AWS</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">MongoDB</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">Python</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">Haskell</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">Node.JS</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">Web Dev</span>
+                <span class="px-2.5 py-0.5 rounded-md border border-[#FFBE2E]/60 bg-[#FFBE2E]/10 text-xs sm:text-sm font-bold amber-text">React</span>
+              </div>
             </div>
 
             <div class="w-full flex justify-start sm:justify-end mt-auto pt-3">
-              <h1 class="pixel-font text-6xl sm:text-7xl md:text-[88px] leading-none amber-text font-bold tracking-wide">
+              <h1 class="pixel-font text-5xl sm:text-7xl md:text-[84px] leading-none amber-text font-bold tracking-wide">
                 <span id="typed-hero-name"></span><span class="typing-cursor" aria-hidden="true"></span>
               </h1>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-2 text-base sm:text-lg amber-text-soft font-semibold">
-          <span>Click a folder or icon to open</span>
-          <span class="hidden sm:inline">Desk props: Trophy &bull; Libyan Flag &bull; Vases &bull; Notebook</span>
+        <div class="flex items-center justify-between pt-2 text-sm sm:text-lg amber-text-soft font-semibold">
+          <span>Open a folder or icon to explore</span>
+          <span class="hidden md:inline">Click desk props: Trophy &bull; Libyan Flag &bull; Vases &bull; Notebook</span>
         </div>
       </div>
 
-      <!-- Bottom CRT Taskbar with Mini Folder Icons, Social Links & Real-Time Visitor Clock -->
-      <div class="crt-dock px-5 sm:px-7 py-2.5 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+      <!-- Bottom CRT Footer Taskbar -->
+      <div class="crt-dock px-3.5 sm:px-7 py-2.5 flex items-center justify-between gap-2 sm:gap-3">
+        <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
           <button type="button" class="dock-btn" onclick="openAppWindow('win-work')" title="Work" aria-label="Work">
             <svg viewBox="0 0 24 18" class="w-5 h-4 fill-none stroke-current" stroke-width="2">
               <path d="M1 4 H9 L11 6 H23 V17 H1 Z" />
@@ -413,9 +427,8 @@
             </svg>
           </a>
 
-          <span class="text-[#FFBE2E]/40 px-1">|</span>
+          <span class="text-[#FFBE2E]/40 px-0.5 sm:px-1">|</span>
 
-          <!-- GitHub -->
           <a href="https://github.com/SofianEpoka" target="_blank" rel="noopener noreferrer" class="dock-btn text-xs sm:text-sm font-bold gap-1.5" title="GitHub: SofianEpoka">
             <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current">
               <path d="M12 0.3C5.37 0.3 0 5.67 0 12.3c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.24-.02-2.25-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.22.7.83.58C20.56 22.1 24 17.6 24 12.3 24 5.67 18.63.3 12 .3z" />
@@ -423,7 +436,6 @@
             <span>GitHub</span>
           </a>
 
-          <!-- LinkedIn -->
           <a href="https://www.linkedin.com/in/sofian-sarrag-70ab89193" target="_blank" rel="noopener noreferrer" class="dock-btn text-xs sm:text-sm font-bold gap-1.5" title="LinkedIn: Sofian Sarrag">
             <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current">
               <path d="M19 3A2 2 0 0 1 21 5V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3H19M18.5 18.5V13.2A3.26 3.26 0 0 0 15.24 9.94C14.39 9.94 13.4 10.46 12.92 11.24V10.13H10.13V18.5H12.92V13.57C12.92 12.8 13.54 12.17 14.31 12.17A1.4 1.4 0 0 1 15.71 13.57V18.5H18.5M6.88 8.56A1.68 1.68 0 0 0 8.56 6.88C8.56 5.95 7.81 5.19 6.88 5.19A1.69 1.69 0 0 0 5.19 6.88C5.19 7.81 5.95 8.56 6.88 8.56M8.27 18.5V10.13H5.5V18.5H8.27Z" />
@@ -432,14 +444,13 @@
           </a>
         </div>
 
-        <!-- Real-Time Visitor Clock -->
         <div class="flex items-center gap-2 text-sm sm:text-base font-bold amber-text shrink-0">
           <span class="hidden md:inline amber-text-soft">LOCAL TIME</span>
           <span id="crt-visitor-clock" class="pixel-font text-xl sm:text-2xl tracking-wider">--:--:--</span>
         </div>
       </div>
 
-      <!-- Window 1: Work (Under Construction) -->
+      <!-- Window 1: Work -->
       <section id="win-work" class="crt-window" aria-label="Work">
         <div class="crt-window-header">
           <span class="pixel-font text-2xl amber-text font-bold">C:\SOFIAN\WORK</span>
@@ -480,7 +491,7 @@
           </div>
 
           <div class="border border-[#FFBE2E]/40 rounded-lg p-3.5 bg-[#FFBE2E]/5">
-            <h3 class="font-bold amber-text mb-1">Academic &amp; Highlights</h3>
+            <h3 class="font-bold amber-text mb-1">Education, Lab &amp; Achievements</h3>
             <ul class="list-disc pl-5 space-y-1 amber-text-soft">
               <li>Hochschule Fulda (Germany) — Applied Science Lab &amp; MSc Global Software Development semester (Cloud Computing, NIST model, Lua Script, Umple)</li>
               <li>2x High Honour Student (Academic Years 2024/2025 &amp; 2025/2026, CGPA &gt; 3.00)</li>
@@ -496,7 +507,7 @@
         </div>
       </section>
 
-      <!-- Window 3: Contact Form -> admin@sofiansarrag.tech -->
+      <!-- Window 3: Contact Form -->
       <section id="win-contact" class="crt-window" aria-label="Contact">
         <div class="crt-window-header">
           <span class="pixel-font text-2xl amber-text font-bold">C:\SOFIAN\CONTACT.EXE</span>
@@ -544,7 +555,7 @@
     </div>
   </div>
 
-  <!-- UI & Interactive Logic -->
+  <!-- CRT Desktop UI & Form Helpers -->
   <script>
     (function initHeroTyping() {
       const target = document.getElementById('typed-hero-name');
@@ -556,19 +567,21 @@
         if (index <= fullName.length) {
           target.textContent = fullName.slice(0, index);
           index += 1;
-          setTimeout(step, index === 1 ? 260 : 95);
+          setTimeout(step, index === 1 ? 220 : 85);
         }
       }
 
-      window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(step, 350);
-      });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(step, 200));
+      } else {
+        setTimeout(step, 200);
+      }
     })();
 
     (function initVisitorClock() {
       const clockEl = document.getElementById('crt-visitor-clock');
       function updateClock() {
-        if (!clockEl) return;
+        if (!clockEl || document.hidden) return;
         const now = new Date();
         const hh = String(now.getHours()).padStart(2, '0');
         const mm = String(now.getMinutes()).padStart(2, '0');
@@ -640,245 +653,666 @@
     }
   </script>
 
-  <!-- 3D Room, Retro Workstation & Interactive Desk Props -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-      }
-    }
-  </script>
+  <!-- 3D Room, Retro Workstation & Desk Props (Desktop/Tablet) -->
   <script type="module">
     import * as THREE from 'three';
 
+    const isMobileViewport = window.innerWidth < 768;
     const canvas = document.getElementById('webgl-canvas');
     const screenUi = document.getElementById('crt-screen-ui');
 
-    // 1. HIGH PERFORMANCE RENDERER (Capped PixelRatio & Disabled Shadows)
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      powerPreference: 'high-performance'
-    });
-    
-    // Strict Cap to max 1.25 for high performance on 4K/retina displays
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = false; // Completely disable shadow rendering overhead
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf2e5d5);
-
-    const camera = new THREE.PerspectiveCamera(
-      43,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      40
-    );
-
-    const startCamPos = new THREE.Vector3(0.18, 1.62, 3.18);
-    const focusCamPos = new THREE.Vector3(0.0, 1.33, 2.02);
-    const focusCamLook = new THREE.Vector3(0.0, 1.29, 0.15);
-    camera.position.copy(startCamPos);
-    camera.lookAt(focusCamLook);
-
-    // Optimized Texture Generator with shared low-res canvases
-    function createOptimizedTexture(width, height, drawFn, repeatX = 1, repeatY = 1) {
-      const c = document.createElement('canvas');
-      c.width = width;
-      c.height = height;
-      const ctx = c.getContext('2d');
-      drawFn(ctx, width, height);
-      const tex = new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      if (repeatX !== 1 || repeatY !== 1) {
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(repeatX, repeatY);
-      }
-      return tex;
-    }
-
-    const creamPlasterTex = createOptimizedTexture(256, 256, (ctx, w, h) => {
-      ctx.fillStyle = '#f3e7d8';
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(214, 195, 172, 0.2)';
-      ctx.lineWidth = 6;
-      for (let y = 16; y < h; y += 32) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.quadraticCurveTo(w * 0.5, y + 6, w, y - 4);
-        ctx.stroke();
-      }
-    }, 2, 2);
-
-    const floorWoodTex = createOptimizedTexture(256, 256, (ctx, w, h) => {
-      ctx.fillStyle = '#4b3220';
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = 'rgba(25, 14, 6, 0.2)';
-      for (let y = 0; y < h; y += 4) {
-        ctx.fillRect(0, y, w, 2);
-      }
-    }, 2, 1);
-
-    const warmWoodTex = createOptimizedTexture(256, 256, (ctx, w, h) => {
-      ctx.fillStyle = '#784c2c';
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = 'rgba(42, 24, 11, 0.18)';
-      for (let y = 0; y < h; y += 4) {
-        ctx.fillRect(0, y, w, 2);
-      }
-    }, 2, 1);
-
-    const libyanFlagTex = createOptimizedTexture(256, 128, (ctx, w, h) => {
-      ctx.fillStyle = '#D21034'; ctx.fillRect(0, 0, w, 32);
-      ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 32, w, 64);
-      ctx.fillStyle = '#239E46'; ctx.fillRect(0, 96, w, 32);
-      // Moon & Star
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath(); ctx.arc(120, 64, 16, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#0B0B0D';
-      ctx.beginPath(); ctx.arc(125, 64, 13, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath(); ctx.arc(142, 64, 5, 0, Math.PI * 2); ctx.fill();
-    });
-
-    const blueWaveTex = createOptimizedTexture(128, 128, (ctx, w, h) => {
-      ctx.fillStyle = '#14181f'; ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 4; ctx.strokeRect(4, 4, w - 8, h - 8);
-      ctx.strokeStyle = '#2980ff'; ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.arc(40, 64, 20, 0, Math.PI); ctx.stroke();
-      ctx.strokeStyle = '#1456cc';
-      ctx.beginPath(); ctx.arc(88, 64, 20, Math.PI, 0); ctx.stroke();
-    });
-
-    // 2. LOW-POLY GEOMETRIES & ROOM
-    const creamWallMat = new THREE.MeshStandardMaterial({ map: creamPlasterTex, roughness: 0.9 });
-    const floorWoodMat = new THREE.MeshStandardMaterial({ map: floorWoodTex, roughness: 0.75 });
-    const deskWoodMat = new THREE.MeshStandardMaterial({ map: warmWoodTex, roughness: 0.6 });
-
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(10, 5.5, 0.1), creamWallMat);
-    backWall.position.set(0, 2.0, -1.9);
-    scene.add(backWall);
-
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 8), floorWoodMat);
-    floor.position.set(0, -0.7, 1.5);
-    scene.add(floor);
-
-    // Desk & CRT Monitor Group
-    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 1.6), deskWoodMat);
-    deskTop.position.set(0, 0.58, -0.22);
-    scene.add(deskTop);
-
-    const crtGroup = new THREE.Group();
-    const beigeCaseMat = new THREE.MeshStandardMaterial({ color: 0xe3d8c4, roughness: 0.55 });
-    const beigeBezelMat = new THREE.MeshStandardMaterial({ color: 0xd4c6ae, roughness: 0.6 });
-    const darkRecessMat = new THREE.MeshStandardMaterial({ color: 0x090D10, roughness: 0.4 });
-
-    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.15, 1.0), beigeCaseMat);
-    mainBody.position.set(0, 1.3, -0.35);
-    crtGroup.add(mainBody);
-
-    const screenW = 1.14;
-    const screenH = 0.86;
-    const recessBack = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), darkRecessMat);
-    recessBack.position.set(0, 1.3, 0.15);
-    crtGroup.add(recessBack);
-
-    const screenZ = 0.16;
-    const screenCenterY = 1.3;
-    const screenCornersLocal = [
-      new THREE.Vector3(-screenW * 0.5, screenCenterY + screenH * 0.5, screenZ),
-      new THREE.Vector3(screenW * 0.5, screenCenterY + screenH * 0.5, screenZ),
-      new THREE.Vector3(screenW * 0.5, screenCenterY - screenH * 0.5, screenZ),
-      new THREE.Vector3(-screenW * 0.5, screenCenterY - screenH * 0.5, screenZ)
-    ];
-
-    scene.add(crtGroup);
-
-    // Light Setup (Optimized - No Shadows)
-    const hemiLight = new THREE.HemisphereLight(0xfff6e8, 0xb8936a, 1.1);
-    scene.add(hemiLight);
-
-    const sunLight = new THREE.DirectionalLight(0xffd494, 1.8);
-    sunLight.position.set(3.5, 3.5, 1.5);
-    scene.add(sunLight);
-
-    // 3. THROTTLED MATRIX PROJECTION (Saves CPU/GPU overhead)
-    const tempCorner = new THREE.Vector3();
-    let lastOverlayCss = '';
-
-    function syncScreenOverlayTo3D() {
-      camera.updateMatrixWorld();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      const projected = screenCornersLocal.map((corner) => {
-        tempCorner.copy(corner).applyMatrix4(crtGroup.matrixWorld).project(camera);
-        return {
-          x: (tempCorner.x * 0.5 + 0.5) * vw,
-          y: (-tempCorner.y * 0.5 + 0.5) * vh
-        };
+    if (!isMobileViewport && canvas && screenUi) {
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        powerPreference: 'high-performance'
       });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = false;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-      const [tl, tr, br, bl] = projected;
-      const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
-      const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
-      const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
-      const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf2e6d5);
 
-      const boxW = Math.max(260, (topW + botW) * 0.5);
-      const boxH = Math.max(200, (leftH + rightH) * 0.5);
-      const angleDeg = (Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180) / Math.PI;
+      const camera = new THREE.PerspectiveCamera(
+        43,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        40
+      );
 
-      const logicalW = 1080;
-      const logicalH = 810;
-      const scaleX = boxW / logicalW;
-      const scaleY = boxH / logicalH;
-
-      const nextTransform = `translate3d(${tl.x.toFixed(1)}px, ${tl.y.toFixed(1)}px, 0) rotate(${angleDeg.toFixed(2)}deg) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
-      if (nextTransform !== lastOverlayCss) {
-        lastOverlayCss = nextTransform;
-        screenUi.style.width = `${logicalW}px`;
-        screenUi.style.height = `${logicalH}px`;
-        screenUi.style.transform = nextTransform;
-      }
-    }
-
-    // Camera Zoom & Idle Animation Loop
-    const loadStart = performance.now();
-    const initialZoomMs = 1200;
-    const smoothPos = startCamPos.clone();
-    const smoothLook = focusCamLook.clone();
-
-    function animate(now) {
-      requestAnimationFrame(animate);
-      if (document.hidden) return; // Completely skip frame execution if tab is inactive
-
-      const elapsed = now - loadStart;
-      const rawT = Math.min(1, Math.max(0, elapsed / initialZoomMs));
-      const easeOutCubic = 1 - Math.pow(1 - rawT, 3);
-
-      smoothPos.lerpVectors(startCamPos, focusCamPos, easeOutCubic);
-      camera.position.copy(smoothPos);
+      // Static camera framing (no mouse-tilt lag) with smooth initial zoom-in toward monitor
+      const startCamPos = new THREE.Vector3(0.14, 1.56, 3.05);
+      const focusCamPos = new THREE.Vector3(0.0, 1.32, 2.04);
+      const focusCamLook = new THREE.Vector3(0.0, 1.29, 0.16);
+      camera.position.copy(startCamPos);
       camera.lookAt(focusCamLook);
 
-      renderer.render(scene, camera);
-      syncScreenOverlayTo3D();
+      // Cached procedural canvas texture helper
+      const textureCache = new Map();
+      function getCachedTexture(key, width, height, drawFn, repeatX = 1, repeatY = 1) {
+        if (textureCache.has(key)) return textureCache.get(key);
+        const c = document.createElement('canvas');
+        c.width = width;
+        c.height = height;
+        const ctx = c.getContext('2d');
+        drawFn(ctx, width, height);
+        const tex = new THREE.CanvasTexture(c);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        if (repeatX !== 1 || repeatY !== 1) {
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(repeatX, repeatY);
+        }
+        textureCache.set(key, tex);
+        return tex;
+      }
+
+      // Smooth cream plaster wall texture (subtle grain, no harsh dots)
+      const creamPlasterTex = getCachedTexture('creamPlaster', 256, 256, (ctx, w, h) => {
+        ctx.fillStyle = '#f3e7d8';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(210, 191, 168, 0.18)';
+        ctx.lineWidth = 5;
+        for (let y = 18; y < h; y += 36) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.quadraticCurveTo(w * 0.5, y + 5, w, y - 4);
+          ctx.stroke();
+        }
+      }, 3, 2);
+
+      // Textured purple ceramic glaze
+      const purpleCeramicTex = getCachedTexture('purpleCeramic', 128, 128, (ctx, w, h) => {
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#8b5cf6');
+        grad.addColorStop(0.5, '#6d28d9');
+        grad.addColorStop(1, '#4c1d95');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(237, 233, 254, 0.18)';
+        ctx.lineWidth = 2;
+        for (let y = 10; y < h; y += 16) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+      });
+
+      // Authentic Libyan flag texture: Red / Black (with white crescent moon & 5-point star) / Green
+      const libyanFlagTex = getCachedTexture('libyanFlag', 256, 144, (ctx, w, h) => {
+        ctx.fillStyle = '#d21034';
+        ctx.fillRect(0, 0, w, h * 0.25);
+
+        ctx.fillStyle = '#0d0e11';
+        ctx.fillRect(0, h * 0.25, w, h * 0.5);
+
+        ctx.fillStyle = '#239e46';
+        ctx.fillRect(0, h * 0.75, w, h * 0.25);
+
+        const cy = h * 0.5;
+        const cx = w * 0.48;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0d0e11';
+        ctx.beginPath();
+        ctx.arc(cx + 5.5, cy, 14.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5-pointed star to the right of the crescent
+        const sx = cx + 24;
+        const sy = cy;
+        const outerR = 7.5;
+        const innerR = 3.2;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const r = i % 2 === 0 ? outerR : innerR;
+          const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+          const px = sx + Math.cos(angle) * r;
+          const py = sy + Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // High-contrast swimming trophy medallion with crisp blue double-wave logo
+      const blueDoubleWaveTex = getCachedTexture('blueDoubleWave', 192, 192, (ctx, w, h) => {
+        ctx.fillStyle = '#0b1220';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = '#f5c84c';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(w * 0.5, h * 0.5, w * 0.43, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Crisp upper cyan-blue wave
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 13;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(30, 82);
+        ctx.quadraticCurveTo(63, 46, 96, 82);
+        ctx.quadraticCurveTo(129, 118, 162, 82);
+        ctx.stroke();
+
+        // Crisp lower deep-blue wave
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 13;
+        ctx.beginPath();
+        ctx.moveTo(30, 118);
+        ctx.quadraticCurveTo(63, 82, 96, 118);
+        ctx.quadraticCurveTo(129, 154, 162, 118);
+        ctx.stroke();
+      });
+
+      // Blue CS notebook cover texture
+      const csNotebookTex = getCachedTexture('csNotebookCover', 160, 200, (ctx, w, h) => {
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = '#93c5fd';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(10, 10, w - 20, h - 20);
+        ctx.fillStyle = '#dbeafe';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('COMP SCI', 24, 62);
+        ctx.font = '13px monospace';
+        ctx.fillStyle = '#bfdbfe';
+        ctx.fillText('NOTES & LABS', 24, 86);
+        ctx.strokeStyle = 'rgba(147, 197, 253, 0.35)';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 4; i++) {
+          ctx.strokeRect(24, 108 + i * 16, w - 48, 10);
+        }
+      });
+
+      // Book spine texture generator
+      function getBookSpineTex(title, bgHex, fgHex) {
+        const key = `spine_${title}_${bgHex}`;
+        return getCachedTexture(key, 128, 32, (ctx, w, h) => {
+          ctx.fillStyle = bgHex;
+          ctx.fillRect(0, 0, w, h);
+          ctx.fillStyle = fgHex;
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(title, 6, h * 0.52, w - 12);
+        });
+      }
+
+      // Lightweight Lambert / Basic materials (no heavy PBR or shadow passes)
+      const wallMat = new THREE.MeshLambertMaterial({ map: creamPlasterTex });
+      const floorMat = new THREE.MeshLambertMaterial({ color: 0x563924 });
+      const deskWoodMat = new THREE.MeshLambertMaterial({ color: 0x835432 });
+      const darkWoodMat = new THREE.MeshLambertMaterial({ color: 0x5c371d });
+      const windowFrameMat = new THREE.MeshLambertMaterial({ color: 0x6b4226 });
+      const skyMat = new THREE.MeshBasicMaterial({ color: 0xfff8eb });
+      const sunBeamMat = new THREE.MeshBasicMaterial({
+        color: 0xffe59e,
+        transparent: true,
+        opacity: 0.14,
+        depthWrite: false
+      });
+
+      const crtCaseMat = new THREE.MeshLambertMaterial({ color: 0xe4d9c5 });
+      const crtBezelMat = new THREE.MeshLambertMaterial({ color: 0xd3c4aa });
+      const crtRecessMat = new THREE.MeshBasicMaterial({ color: 0x090703 });
+      const keycapMat = new THREE.MeshLambertMaterial({ color: 0xebe1cf });
+      const keycapDarkMat = new THREE.MeshLambertMaterial({ color: 0xb8aa92 });
+      const goldMat = new THREE.MeshLambertMaterial({ color: 0xe0b43b });
+      const silverMat = new THREE.MeshLambertMaterial({ color: 0xcbd5e1 });
+      const purpleVaseMat = new THREE.MeshLambertMaterial({ map: purpleCeramicTex });
+      const redPenMat = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
+
+      // Room Walls & Floor
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(11, 6, 0.12), wallMat);
+      backWall.position.set(0, 2.0, -2.0);
+      scene.add(backWall);
+
+      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, 6, 8), wallMat);
+      rightWall.position.set(4.6, 2.0, 1.0);
+      scene.add(rightWall);
+
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, 6, 8), wallMat);
+      leftWall.position.set(-4.6, 2.0, 1.0);
+      scene.add(leftWall);
+
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.12, 8), floorMat);
+      floor.position.set(0, -0.75, 1.2);
+      scene.add(floor);
+
+      // Wooden Window on Back-Right Wall (clean sunlit window, no green bush/foliage)
+      const windowGroup = new THREE.Group();
+      windowGroup.position.set(2.35, 1.85, -1.91);
+
+      const winPane = new THREE.Mesh(new THREE.PlaneGeometry(1.45, 1.65), skyMat);
+      winPane.position.z = 0.01;
+      windowGroup.add(winPane);
+
+      const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.1, 0.12), windowFrameMat);
+      frameTop.position.set(0, 0.85, 0.05);
+      const frameBot = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 0.16), windowFrameMat);
+      frameBot.position.set(0, -0.85, 0.06);
+      const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.75, 0.12), windowFrameMat);
+      frameLeft.position.set(-0.75, 0, 0.05);
+      const frameRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.75, 0.12), windowFrameMat);
+      frameRight.position.set(0.75, 0, 0.05);
+      const mullionV = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.65, 0.08), windowFrameMat);
+      mullionV.position.set(0, 0, 0.04);
+      const mullionH = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.05, 0.08), windowFrameMat);
+      mullionH.position.set(0, 0.08, 0.04);
+      windowGroup.add(frameTop, frameBot, frameLeft, frameRight, mullionV, mullionH);
+      scene.add(windowGroup);
+
+      // Subtle Golden Sunlight Shaft
+      const sunShaft = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.2), sunBeamMat);
+      sunShaft.position.set(1.25, 1.25, -0.65);
+      sunShaft.rotation.y = -0.35;
+      sunShaft.rotation.z = -0.18;
+      scene.add(sunShaft);
+
+      // Wall Bookshelf with Engineering & CS Book Titles
+      const shelfGroup = new THREE.Group();
+      shelfGroup.position.set(-1.65, 2.05, -1.86);
+
+      const shelfPlank = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.07, 0.28), darkWoodMat);
+      const bracketL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.18, 0.2), darkWoodMat);
+      bracketL.position.set(-0.62, -0.11, -0.02);
+      const bracketR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.18, 0.2), darkWoodMat);
+      bracketR.position.set(0.62, -0.11, -0.02);
+      shelfGroup.add(shelfPlank, bracketL, bracketR);
+
+      const csBooks = [
+        { title: 'Clean Code', color: '#7f1d1d', text: '#fef2f2', h: 0.34, t: 0.055 },
+        { title: 'SICP', color: '#1e3a8a', text: '#eff6ff', h: 0.37, t: 0.06 },
+        { title: 'Intro to Algorithms', color: '#14532d', text: '#f0fdf4', h: 0.39, t: 0.075 },
+        { title: 'Designing Data-Intensive Apps', color: '#78350f', text: '#fffbeb', h: 0.36, t: 0.065 },
+        { title: 'The Pragmatic Programmer', color: '#312e81', text: '#eef2ff', h: 0.33, t: 0.055 }
+      ];
+
+      let bookX = -0.62;
+      csBooks.forEach((b, idx) => {
+        const spineMat = new THREE.MeshLambertMaterial({ map: getBookSpineTex(b.title, b.color, b.text) });
+        const coverMat = new THREE.MeshLambertMaterial({ color: b.color });
+        const bookMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(b.t, b.h, 0.21),
+          [coverMat, coverMat, coverMat, coverMat, spineMat, coverMat]
+        );
+        bookMesh.position.set(bookX + b.t * 0.5, 0.035 + b.h * 0.5, 0.01);
+        if (idx === csBooks.length - 1) {
+          bookMesh.position.x += 0.04;
+          bookMesh.position.y -= 0.02;
+          bookMesh.rotation.z = -0.22;
+        }
+        shelfGroup.add(bookMesh);
+        bookX += b.t + 0.025;
+      });
+      scene.add(shelfGroup);
+
+      // Desk Surface & Legs
+      const deskTop = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.11, 1.75), deskWoodMat);
+      deskTop.position.set(0, 0.58, -0.18);
+      scene.add(deskTop);
+
+      const legGeo = new THREE.BoxGeometry(0.11, 1.3, 0.11);
+      [
+        [-1.95, -0.1, -0.92],
+        [1.95, -0.1, -0.92],
+        [-1.95, -0.1, 0.55],
+        [1.95, -0.1, 0.55]
+      ].forEach(([lx, ly, lz]) => {
+        const leg = new THREE.Mesh(legGeo, darkWoodMat);
+        leg.position.set(lx, ly, lz);
+        scene.add(leg);
+      });
+
+      // Retro CRT Monitor Body & Bezel
+      const crtGroup = new THREE.Group();
+      const baseStand = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.07, 0.86), crtBezelMat);
+      baseStand.position.set(0, 0.67, -0.18);
+      crtGroup.add(baseStand);
+
+      const mainBox = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.2, 0.96), crtCaseMat);
+      mainBox.position.set(0, 1.3, -0.34);
+      crtGroup.add(mainBox);
+
+      const rearTube = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.84, 0.36), crtBezelMat);
+      rearTube.position.set(0, 1.31, -0.88);
+      crtGroup.add(rearTube);
+
+      const bezelTop = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.13, 0.12), crtBezelMat);
+      bezelTop.position.set(0, 1.79, 0.17);
+      const bezelBot = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.17, 0.12), crtBezelMat);
+      bezelBot.position.set(0, 0.79, 0.17);
+      const bezelLeft = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.88, 0.12), crtBezelMat);
+      bezelLeft.position.set(-0.645, 1.29, 0.17);
+      const bezelRight = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.88, 0.12), crtBezelMat);
+      bezelRight.position.set(0.645, 1.29, 0.17);
+      crtGroup.add(bezelTop, bezelBot, bezelLeft, bezelRight);
+
+      const screenW = 1.16;
+      const screenH = 0.87;
+      const screenZ = 0.14;
+      const screenCenterY = 1.29;
+
+      const recessPlane = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), crtRecessMat);
+      recessPlane.position.set(0, screenCenterY, screenZ - 0.01);
+      crtGroup.add(recessPlane);
+
+      const screenCornersLocal = [
+        new THREE.Vector3(-screenW * 0.5, screenCenterY + screenH * 0.5, screenZ),
+        new THREE.Vector3(screenW * 0.5, screenCenterY + screenH * 0.5, screenZ),
+        new THREE.Vector3(screenW * 0.5, screenCenterY - screenH * 0.5, screenZ),
+        new THREE.Vector3(-screenW * 0.5, screenCenterY - screenH * 0.5, screenZ)
+      ];
+      scene.add(crtGroup);
+
+      // Separated 3D Keyboard & Detailed 3D Mouse on Desk
+      const kbGroup = new THREE.Group();
+      kbGroup.position.set(-0.14, 0.655, 0.34);
+      const kbBase = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.036, 0.27), crtBezelMat);
+      kbGroup.add(kbBase);
+
+      const singleKeyGeo = new THREE.BoxGeometry(0.042, 0.018, 0.042);
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 15; c++) {
+          const isSpecial = c === 0 || c === 14 || (r === 3 && c >= 4 && c <= 9);
+          const keyMesh = new THREE.Mesh(singleKeyGeo, isSpecial ? keycapDarkMat : keycapMat);
+          const kw = r === 3 && c >= 4 && c <= 9 ? 0.055 : 0.042;
+          keyMesh.scale.x = kw / 0.042;
+          keyMesh.position.set(-0.37 + c * 0.052, 0.025, -0.075 + r * 0.05);
+          kbGroup.add(keyMesh);
+        }
+      }
+      scene.add(kbGroup);
+
+      // Detailed 3D Mouse to the right of keyboard
+      const mouseGroup = new THREE.Group();
+      mouseGroup.position.set(0.56, 0.652, 0.36);
+      const mouseBody = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.048, 0.18), crtCaseMat);
+      mouseBody.position.y = 0.024;
+      const mouseBtnL = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.012, 0.072), keycapMat);
+      mouseBtnL.position.set(-0.026, 0.05, -0.045);
+      const mouseBtnR = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.012, 0.072), keycapMat);
+      mouseBtnR.position.set(0.026, 0.05, -0.045);
+      const scrollWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10), keycapDarkMat);
+      scrollWheel.rotation.z = Math.PI * 0.5;
+      scrollWheel.position.set(0, 0.052, -0.045);
+      mouseGroup.add(mouseBody, mouseBtnL, mouseBtnR, scrollWheel);
+      scene.add(mouseGroup);
+
+      // Interactive Desk Easter Eggs
+      const interactiveMeshes = [];
+
+      // 1. Bigger Swimming Trophy Cup with Clean Non-Clipping Geometry & Front Blue Double-Wave Emblem
+      const trophyGroup = new THREE.Group();
+      trophyGroup.position.set(-1.12, 0.635, 0.28);
+      trophyGroup.rotation.y = 0.24;
+
+      const trophyBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.075, 0.24), darkWoodMat);
+      trophyBase.position.y = 0.0375;
+
+      const trophyStem = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.055, 0.12, 14), goldMat);
+      trophyStem.position.y = 0.135;
+
+      // Open-top cup bowl with outer and inner wall so nothing clips inside the cup
+      const bowlBottomY = 0.215;
+      const bowlHeight = 0.22;
+      const bowlCenterY = bowlBottomY + bowlHeight * 0.5;
+      const trophyCupOuter = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.155, 0.092, bowlHeight, 20, 1, false),
+        goldMat
+      );
+      trophyCupOuter.position.y = bowlCenterY;
+
+      const trophyCupInner = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.132, 0.082, bowlHeight - 0.02, 20, 1, false),
+        new THREE.MeshLambertMaterial({ color: 0xb88b24 })
+      );
+      trophyCupInner.position.y = bowlCenterY + 0.014;
+
+      const trophyRim = new THREE.Mesh(new THREE.TorusGeometry(0.144, 0.013, 10, 22), goldMat);
+      trophyRim.rotation.x = Math.PI * 0.5;
+      trophyRim.position.y = bowlBottomY + bowlHeight;
+
+      // Crisp front-mounted blue double-wave emblem on the front face of the cup
+      const waveBadgeMat = new THREE.MeshBasicMaterial({ map: blueDoubleWaveTex });
+      const waveBadgeBacking = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.012, 18), goldMat);
+      waveBadgeBacking.rotation.x = Math.PI * 0.5;
+      waveBadgeBacking.position.set(0, bowlCenterY + 0.01, 0.126);
+
+      const waveBadge = new THREE.Mesh(new THREE.CircleGeometry(0.075, 22), waveBadgeMat);
+      waveBadge.position.set(0, bowlCenterY + 0.01, 0.133);
+
+      trophyGroup.add(
+        trophyBase,
+        trophyStem,
+        trophyCupOuter,
+        trophyCupInner,
+        trophyRim,
+        waveBadgeBacking,
+        waveBadge
+      );
+      trophyGroup.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.userData.easterEgg = 'Swimming Trophy Cup — Albanian Competitive Swimmer & Blue Double-Wave Emblem!';
+          interactiveMeshes.push(obj);
+        }
+      });
+      scene.add(trophyGroup);
+
+      // 2. Authentic Libyan Flag on Pole (Red, Black with White Crescent & Star, Green)
+      const flagGroup = new THREE.Group();
+      flagGroup.position.set(1.38, 0.635, 0.04);
+      const flagStandBase = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.035, 14), goldMat);
+      flagStandBase.position.y = 0.0175;
+      const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.56, 10), goldMat);
+      flagPole.position.y = 0.29;
+      const flagTopper = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), goldMat);
+      flagTopper.position.y = 0.58;
+      const flagClothMat = new THREE.MeshBasicMaterial({ map: libyanFlagTex, side: THREE.DoubleSide });
+      const flagCloth = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.19), flagClothMat);
+      flagCloth.position.set(0.175, 0.44, 0);
+      flagCloth.rotation.y = -0.18;
+      flagGroup.add(flagStandBase, flagPole, flagTopper, flagCloth);
+      flagGroup.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.userData.easterEgg = 'Libyan Flag — Red, Black (Crescent Moon & Star) & Green.';
+          interactiveMeshes.push(obj);
+        }
+      });
+      scene.add(flagGroup);
+
+      // 3. Bigger Textured Purple Ceramic Vases with Green Plants, Clearly Separated from Trophy Cup
+      const plantLeafMat = new THREE.MeshLambertMaterial({ color: 0x228b46 });
+      const plantTipMat = new THREE.MeshLambertMaterial({ color: 0x34a853 });
+
+      function createPurpleVaseWithPlant(x, y, z, scale = 1.22) {
+        const g = new THREE.Group();
+        g.position.set(x, y, z);
+        g.scale.setScalar(scale);
+
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.072, 0.19, 14), purpleVaseMat);
+        pot.position.y = 0.095;
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.099, 0.014, 8, 16), purpleVaseMat);
+        rim.rotation.x = Math.PI * 0.5;
+        rim.position.y = 0.19;
+        g.add(pot, rim);
+
+        const leafGeo = new THREE.ConeGeometry(0.04, 0.15, 6);
+        const leafAngles = [0, 1.1, 2.2, 3.3, 4.4, 5.4];
+        leafAngles.forEach((ang, i) => {
+          const leaf = new THREE.Mesh(leafGeo, i % 2 === 0 ? plantLeafMat : plantTipMat);
+          leaf.position.set(Math.cos(ang) * 0.038, 0.245, Math.sin(ang) * 0.038);
+          leaf.rotation.z = -Math.cos(ang) * 0.42;
+          leaf.rotation.x = Math.sin(ang) * 0.42;
+          g.add(leaf);
+        });
+
+        g.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.userData.easterEgg = 'Textured Purple Ceramic Vase & Green Desk Plant.';
+            interactiveMeshes.push(obj);
+          }
+        });
+        scene.add(g);
+      }
+
+      // Placed far to the left edge and far right edge—never behind or touching the trophy cup
+      createPurpleVaseWithPlant(-1.76, 0.635, 0.18, 1.24);
+      createPurpleVaseWithPlant(1.78, 0.635, -0.32, 1.22);
+
+      // 4. Larger Blue CS Notebook with Detailed Red Pen Resting Across It
+      const notebookGroup = new THREE.Group();
+      notebookGroup.position.set(0.98, 0.635, 0.26);
+      notebookGroup.rotation.y = -0.22;
+
+      const nbCoverMat = new THREE.MeshLambertMaterial({ map: csNotebookTex });
+      const nbPagesMat = new THREE.MeshLambertMaterial({ color: 0xfef9c3 });
+      const nbCover = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.022, 0.36),
+        [nbPagesMat, nbPagesMat, nbCoverMat, nbCoverMat, nbPagesMat, nbPagesMat]
+      );
+      nbCover.position.y = 0.011;
+      notebookGroup.add(nbCover);
+
+      // Detailed Red Pen resting diagonally across the notebook
+      const penGroup = new THREE.Group();
+      penGroup.position.set(0.02, 0.032, 0.02);
+      penGroup.rotation.y = 0.45;
+      const penBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.22, 10), redPenMat);
+      penBarrel.rotation.z = Math.PI * 0.5;
+      const penTip = new THREE.Mesh(new THREE.ConeGeometry(0.0085, 0.032, 10), silverMat);
+      penTip.rotation.z = -Math.PI * 0.5;
+      penTip.position.x = 0.125;
+      const penClip = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.004, 0.004), silverMat);
+      penClip.position.set(-0.075, 0.009, 0);
+      penGroup.add(penBarrel, penTip, penClip);
+      notebookGroup.add(penGroup);
+
+      notebookGroup.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.userData.easterEgg = 'Blue Computer Science Notebook & Detailed Red Pen.';
+          interactiveMeshes.push(obj);
+        }
+      });
+      scene.add(notebookGroup);
+
+      // Clean Room & Sunlight Lighting
+      const hemiLight = new THREE.HemisphereLight(0xfff7eb, 0xb8936a, 1.15);
+      scene.add(hemiLight);
+
+      const sunLight = new THREE.DirectionalLight(0xffd996, 1.45);
+      sunLight.position.set(3.2, 3.2, 1.4);
+      scene.add(sunLight);
+
+      // Click handler for 3D desk easter eggs
+      const raycaster = new THREE.Raycaster();
+      const pointerNdc = new THREE.Vector2();
+      canvas.addEventListener('click', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        pointerNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointerNdc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(pointerNdc, camera);
+        const hits = raycaster.intersectObjects(interactiveMeshes, false);
+        if (hits.length > 0 && hits[0].object.userData.easterEgg) {
+          triggerEasterEggToast(hits[0].object.userData.easterEgg);
+        }
+      });
+
+      // Project 3D CRT screen corners into 2D overlay CSS transform (called during initial zoom and resize)
+      const tempCorner = new THREE.Vector3();
+      const logicalW = 1040;
+      const logicalH = 780;
+
+      function syncScreenOverlayTo3D() {
+        camera.updateMatrixWorld();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        const projected = screenCornersLocal.map((corner) => {
+          tempCorner.copy(corner).applyMatrix4(crtGroup.matrixWorld).project(camera);
+          return {
+            x: (tempCorner.x * 0.5 + 0.5) * vw,
+            y: (-tempCorner.y * 0.5 + 0.5) * vh
+          };
+        });
+
+        const [tl, tr, br, bl] = projected;
+        const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+        const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
+        const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+        const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+
+        const boxW = Math.max(240, (topW + botW) * 0.5);
+        const boxH = Math.max(180, (leftH + rightH) * 0.5);
+        const angleDeg = (Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180) / Math.PI;
+        const scaleX = boxW / logicalW;
+        const scaleY = boxH / logicalH;
+
+        screenUi.style.width = `${logicalW}px`;
+        screenUi.style.height = `${logicalH}px`;
+        screenUi.style.transform =
+          `translate3d(${tl.x.toFixed(1)}px, ${tl.y.toFixed(1)}px, 0) ` +
+          `rotate(${angleDeg.toFixed(2)}deg) ` +
+          `scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
+      }
+
+      // Smooth initial zoom toward monitor, then stop rendering so laptop CPU/GPU stay idle
+      const zoomStart = performance.now();
+      const zoomDurationMs = 1500;
+      let rafId = null;
+
+      function renderOnce() {
+        if (document.hidden) return;
+        renderer.render(scene, camera);
+        syncScreenOverlayTo3D();
+      }
+
+      function zoomStep(now) {
+        if (document.hidden) {
+          rafId = requestAnimationFrame(zoomStep);
+          return;
+        }
+        const t = Math.min(1, Math.max(0, (now - zoomStart) / zoomDurationMs));
+        const eased = 1 - Math.pow(1 - t, 3);
+        camera.position.lerpVectors(startCamPos, focusCamPos, eased);
+        camera.lookAt(focusCamLook);
+
+        renderOnce();
+
+        if (t < 1) {
+          rafId = requestAnimationFrame(zoomStep);
+        } else {
+          rafId = null;
+        }
+      }
+
+      renderOnce();
+      rafId = requestAnimationFrame(zoomStep);
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !rafId) {
+          renderOnce();
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth < 768) return;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderOnce();
+      });
     }
-
-    // Trigger initial render sync
-    syncScreenOverlayTo3D();
-    requestAnimationFrame(animate);
-
-    window.addEventListener('resize', () => {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      syncScreenOverlayTo3D();
-    });
   </script>
 </body>
 </html>
