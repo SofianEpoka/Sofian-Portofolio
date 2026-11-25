@@ -62,17 +62,52 @@
       overflow: hidden;
     }
 
+    /* Fallback default centering so screen displays instantly before WebGL calculation */
     #crt-screen-ui {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       transform-origin: 0 0;
       background: radial-gradient(circle at 50% 45%, #191206 0%, #0d0a04 72%, #070502 100%);
       color: var(--amber-bright);
-      border-radius: 34px;
+      border-radius: 28px;
       overflow: hidden;
       pointer-events: auto;
-      box-shadow: inset 0 0 42px rgba(0, 0, 0, 0.92), inset 0 0 12px rgba(255, 176, 0, 0.14);
+      box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.92), inset 0 0 10px rgba(255, 176, 0, 0.14);
+      width: 90vw;
+      max-width: 1020px;
+      height: 82vh;
+      max-height: 760px;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .crt-scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 3px,
+        rgba(0, 0, 0, 0.22) 4px
+      );
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    .crt-flicker {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 184, 30, 0.015);
+      animation: crtSubtleFlicker 5s infinite;
+      pointer-events: none;
+      z-index: 41;
+    }
+
+    @keyframes crtSubtleFlicker {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
     }
 
     .crt-scanlines {
@@ -606,22 +641,32 @@
   </script>
 
   <!-- 3D Room, Retro Workstation & Interactive Desk Props -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
   <script type="module">
     import * as THREE from 'three';
 
     const canvas = document.getElementById('webgl-canvas');
     const screenUi = document.getElementById('crt-screen-ui');
 
+    // 1. HIGH PERFORMANCE RENDERER (Capped PixelRatio & Disabled Shadows)
     const renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
       powerPreference: 'high-performance'
     });
-    const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    
+    // Strict Cap to max 1.25 for high performance on 4K/retina displays
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = false; // Completely disable shadow rendering overhead
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.14;
+    renderer.toneMappingExposure = 1.1;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf2e5d5);
@@ -630,7 +675,7 @@
       43,
       window.innerWidth / window.innerHeight,
       0.1,
-      60
+      40
     );
 
     const startCamPos = new THREE.Vector3(0.18, 1.62, 3.18);
@@ -639,511 +684,109 @@
     camera.position.copy(startCamPos);
     camera.lookAt(focusCamLook);
 
-    const textureCache = new Map();
-    function getCachedTexture(key, builderFn, repeatX = 1, repeatY = 1, isColor = true) {
-      if (textureCache.has(key)) return textureCache.get(key);
-      const tex = builderFn();
-      if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = maxAnisotropy;
+    // Optimized Texture Generator with shared low-res canvases
+    function createOptimizedTexture(width, height, drawFn, repeatX = 1, repeatY = 1) {
+      const c = document.createElement('canvas');
+      c.width = width;
+      c.height = height;
+      const ctx = c.getContext('2d');
+      drawFn(ctx, width, height);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
       if (repeatX !== 1 || repeatY !== 1) {
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set(repeatX, repeatY);
       }
-      tex.needsUpdate = true;
-      textureCache.set(key, tex);
       return tex;
     }
 
-    function createCreamPlasterTexture() {
-      const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 512;
-      const ctx = c.getContext('2d');
+    const creamPlasterTex = createOptimizedTexture(256, 256, (ctx, w, h) => {
       ctx.fillStyle = '#f3e7d8';
-      ctx.fillRect(0, 0, 512, 512);
-
-      const grad = ctx.createLinearGradient(0, 0, 512, 512);
-      grad.addColorStop(0, 'rgba(255, 250, 242, 0.25)');
-      grad.addColorStop(0.5, 'rgba(235, 219, 199, 0.14)');
-      grad.addColorStop(1, 'rgba(255, 248, 238, 0.22)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 512, 512);
-
-      ctx.strokeStyle = 'rgba(214, 195, 172, 0.16)';
-      ctx.lineWidth = 10;
-      for (let y = 24; y < 512; y += 64) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.bezierCurveTo(170, y - 14, 340, y + 14, 512, y - 4);
-        ctx.stroke();
-      }
-
-      return new THREE.CanvasTexture(c);
-    }
-
-    function createPlasterBumpTexture() {
-      const c = document.createElement('canvas');
-      c.width = 256;
-      c.height = 256;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#808080';
-      ctx.fillRect(0, 0, 256, 256);
-      ctx.strokeStyle = '#929292';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(214, 195, 172, 0.2)';
       ctx.lineWidth = 6;
-      for (let y = 16; y < 256; y += 32) {
+      for (let y = 16; y < h; y += 32) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.quadraticCurveTo(128, y + 8, 256, y - 4);
+        ctx.quadraticCurveTo(w * 0.5, y + 6, w, y - 4);
         ctx.stroke();
       }
-      return new THREE.CanvasTexture(c);
-    }
+    }, 2, 2);
 
-    function createWoodTexture(baseHex = '#754b2c', grainDark = 'rgba(42, 24, 11, 0.18)', grainLight = 'rgba(165, 116, 72, 0.12)') {
-      const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 512;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = baseHex;
-      ctx.fillRect(0, 0, 512, 512);
-      for (let y = 0; y < 512; y += 2) {
-        const wave = Math.sin(y * 0.035) * 14 + Math.cos(y * 0.09) * 6;
-        ctx.fillStyle = y % 4 === 0 ? grainDark : grainLight;
-        ctx.fillRect(0, y + (wave % 2), 512, 2);
+    const floorWoodTex = createOptimizedTexture(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = '#4b3220';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(25, 14, 6, 0.2)';
+      for (let y = 0; y < h; y += 4) {
+        ctx.fillRect(0, y, w, 2);
       }
-      return new THREE.CanvasTexture(c);
-    }
+    }, 2, 1);
 
-    function createPurpleCeramicTexture() {
-      const c = document.createElement('canvas');
-      c.width = 256;
-      c.height = 256;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#5d2b7e';
-      ctx.fillRect(0, 0, 256, 256);
-
-      for (let x = 0; x < 256; x += 16) {
-        ctx.fillStyle = 'rgba(34, 10, 52, 0.22)';
-        ctx.fillRect(x, 0, 6, 256);
-        ctx.fillStyle = 'rgba(182, 126, 224, 0.14)';
-        ctx.fillRect(x + 8, 0, 4, 256);
+    const warmWoodTex = createOptimizedTexture(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = '#784c2c';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(42, 24, 11, 0.18)';
+      for (let y = 0; y < h; y += 4) {
+        ctx.fillRect(0, y, w, 2);
       }
-      return new THREE.CanvasTexture(c);
-    }
+    }, 2, 1);
 
-    function createAuthenticLibyanFlagTexture() {
-      const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 256;
-      const ctx = c.getContext('2d');
-
-      ctx.fillStyle = '#D21034';
-      ctx.fillRect(0, 0, 512, 64);
-
-      ctx.fillStyle = '#0B0B0D';
-      ctx.fillRect(0, 64, 512, 128);
-
-      ctx.fillStyle = '#239E46';
-      ctx.fillRect(0, 192, 512, 64);
-
-      const moonCx = 244;
-      const moonCy = 128;
+    const libyanFlagTex = createOptimizedTexture(256, 128, (ctx, w, h) => {
+      ctx.fillStyle = '#D21034'; ctx.fillRect(0, 0, w, 32);
+      ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 32, w, 64);
+      ctx.fillStyle = '#239E46'; ctx.fillRect(0, 96, w, 32);
+      // Moon & Star
       ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(moonCx, moonCy, 34, 0, Math.PI * 2);
-      ctx.fill();
-
+      ctx.beginPath(); ctx.arc(120, 64, 16, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#0B0B0D';
-      ctx.beginPath();
-      ctx.arc(moonCx + 11, moonCy, 27.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      const starCx = 283;
-      const starCy = 128;
-      const outerR = 14;
-      const innerR = 5.6;
+      ctx.beginPath(); ctx.arc(125, 64, 13, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      for (let i = 0; i < 10; i += 1) {
-        const r = i % 2 === 0 ? outerR : innerR;
-        const angle = (i * Math.PI) / 5 - Math.PI / 2;
-        const px = starCx + Math.cos(angle) * r;
-        const py = starCy + Math.sin(angle) * r;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(142, 64, 5, 0, Math.PI * 2); ctx.fill();
+    });
 
-      return new THREE.CanvasTexture(c);
-    }
-
-    function createBlueDoubleWaveLogoTexture() {
-      const c = document.createElement('canvas');
-      c.width = 256;
-      c.height = 256;
-      const ctx = c.getContext('2d');
-
-      ctx.fillStyle = '#14181f';
-      ctx.fillRect(0, 0, 256, 256);
-
-      ctx.strokeStyle = '#d4af37';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(10, 10, 236, 236);
-
-      ctx.strokeStyle = '#2980ff';
-      ctx.lineWidth = 16;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(34, 106);
-      ctx.bezierCurveTo(72, 66, 112, 146, 152, 106);
-      ctx.bezierCurveTo(182, 78, 204, 118, 222, 104);
-      ctx.stroke();
-
+    const blueWaveTex = createOptimizedTexture(128, 128, (ctx, w, h) => {
+      ctx.fillStyle = '#14181f'; ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 4; ctx.strokeRect(4, 4, w - 8, h - 8);
+      ctx.strokeStyle = '#2980ff'; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(40, 64, 20, 0, Math.PI); ctx.stroke();
       ctx.strokeStyle = '#1456cc';
-      ctx.lineWidth = 16;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(34, 158);
-      ctx.bezierCurveTo(72, 118, 112, 198, 152, 158);
-      ctx.bezierCurveTo(182, 130, 204, 170, 222, 156);
-      ctx.stroke();
-
-      return new THREE.CanvasTexture(c);
-    }
-
-    function createBlueNotebookTexture() {
-      const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 640;
-      const ctx = c.getContext('2d');
-
-      ctx.fillStyle = '#1b4b8c';
-      ctx.fillRect(0, 0, 512, 640);
-
-      ctx.fillStyle = '#123261';
-      ctx.fillRect(0, 0, 48, 640);
-
-      ctx.strokeStyle = '#7ec8ff';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(92, 110, 376, 420);
-
-      ctx.strokeStyle = 'rgba(180, 225, 255, 0.55)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(130, 210); ctx.lineTo(240, 210); ctx.lineTo(285, 255); ctx.lineTo(425, 255);
-      ctx.moveTo(130, 330); ctx.lineTo(210, 330); ctx.lineTo(255, 375); ctx.lineTo(425, 375);
-      ctx.stroke();
-
-      ctx.fillStyle = '#e6f4ff';
-      ctx.font = 'bold 42px monospace';
-      ctx.fillText('CS NOTEBOOK', 116, 172);
-      ctx.font = 'bold 26px monospace';
-      ctx.fillStyle = '#9bd4ff';
-      ctx.fillText('ALGORITHMS & CLOUD', 116, 455);
-
-      return new THREE.CanvasTexture(c);
-    }
-
-    function createWindowTreesTexture() {
-      const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 512;
-      const ctx = c.getContext('2d');
-
-      const sky = ctx.createLinearGradient(0, 0, 0, 512);
-      sky.addColorStop(0, '#bfe6ff');
-      sky.addColorStop(0.55, '#e8f6ff');
-      sky.addColorStop(1, '#cde7b5');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, 512, 512);
-
-      const treeClusters = [
-        { x: 85, y: 270, r: 95, col: '#3a7d3a' },
-        { x: 185, y: 235, r: 115, col: '#2e6b2f' },
-        { x: 300, y: 260, r: 105, col: '#489143' },
-        { x: 415, y: 245, r: 100, col: '#357336' },
-        { x: 135, y: 340, r: 110, col: '#255926' },
-        { x: 265, y: 350, r: 120, col: '#326e32' },
-        { x: 390, y: 345, r: 115, col: '#275c28' }
-      ];
-      treeClusters.forEach((t) => {
-        ctx.fillStyle = t.col;
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      for (let i = 0; i < 45; i += 1) {
-        const lx = 35 + ((i * 73) % 440);
-        const ly = 165 + ((i * 59) % 210);
-        ctx.fillStyle = i % 2 === 0 ? 'rgba(130, 198, 72, 0.45)' : 'rgba(63, 138, 56, 0.45)';
-        ctx.beginPath();
-        ctx.arc(lx, ly, 18 + (i % 16), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.fillStyle = '#4c8c3b';
-      ctx.fillRect(0, 415, 512, 97);
-
-      return new THREE.CanvasTexture(c);
-    }
-
-    function createBookSpineTexture(title, bgHex, textHex = '#fff8e7') {
-      const c = document.createElement('canvas');
-      c.width = 128;
-      c.height = 512;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = bgHex;
-      ctx.fillRect(0, 0, 128, 512);
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
-      ctx.fillRect(0, 28, 128, 10);
-      ctx.fillRect(0, 474, 128, 10);
-
-      ctx.save();
-      ctx.translate(68, 256);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillStyle = textHex;
-      ctx.font = 'bold 24px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(title, 0, 0);
-      ctx.restore();
-
-      return new THREE.CanvasTexture(c);
-    }
-
-    const creamPlasterTex = getCachedTexture('cream-plaster', createCreamPlasterTexture, 3, 2, true);
-    const plasterBumpTex = getCachedTexture('plaster-bump', createPlasterBumpTexture, 4, 3, false);
-    const floorWoodTex = getCachedTexture(
-      'floor-wood',
-      () => createWoodTexture('#4b3220', 'rgba(25, 14, 6, 0.25)', 'rgba(115, 82, 52, 0.12)'),
-      2,
-      1,
-      true
-    );
-    const warmWoodTex = getCachedTexture('warm-wood', () => createWoodTexture('#784c2c'), 2, 1, true);
-    const purpleCeramicTex = getCachedTexture('purple-ceramic', createPurpleCeramicTexture, 1, 1, true);
-    const purpleCeramicBumpTex = getCachedTexture('purple-ceramic-bump', createPurpleCeramicTexture, 1, 1, false);
-    const libyanFlagTex = getCachedTexture('libyan-flag', createAuthenticLibyanFlagTexture, 1, 1, true);
-    const blueWaveTex = getCachedTexture('blue-wave', createBlueDoubleWaveLogoTexture, 1, 1, true);
-    const blueNotebookTex = getCachedTexture('blue-notebook', createBlueNotebookTexture, 1, 1, true);
-    const windowTreesTex = getCachedTexture('window-trees', createWindowTreesTexture, 1, 1, true);
-
-    // 3D Room: Cream Plaster Walls, Floor, Wooden Window & Bookshelf
-    const creamWallMat = new THREE.MeshStandardMaterial({
-      map: creamPlasterTex,
-      bumpMap: plasterBumpTex,
-      bumpScale: 0.008,
-      roughness: 0.88,
-      metalness: 0.01
+      ctx.beginPath(); ctx.arc(88, 64, 20, Math.PI, 0); ctx.stroke();
     });
 
-    const floorWoodMat = new THREE.MeshStandardMaterial({
-      map: floorWoodTex,
-      roughness: 0.72,
-      metalness: 0.04
-    });
+    // 2. LOW-POLY GEOMETRIES & ROOM
+    const creamWallMat = new THREE.MeshStandardMaterial({ map: creamPlasterTex, roughness: 0.9 });
+    const floorWoodMat = new THREE.MeshStandardMaterial({ map: floorWoodTex, roughness: 0.75 });
+    const deskWoodMat = new THREE.MeshStandardMaterial({ map: warmWoodTex, roughness: 0.6 });
 
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(11.5, 6.2, 0.22), creamWallMat);
-    backWall.position.set(0, 2.2, -1.9);
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(10, 5.5, 0.1), creamWallMat);
+    backWall.position.set(0, 2.0, -1.9);
     scene.add(backWall);
 
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, 6.2, 10.0), creamWallMat);
-    rightWall.position.set(4.1, 2.2, 1.6);
-    scene.add(rightWall);
-
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.22, 10.0), floorWoodMat);
-    floor.position.set(0, -0.78, 1.6);
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 8), floorWoodMat);
+    floor.position.set(0, -0.7, 1.5);
     scene.add(floor);
 
-    const windowGroup = new THREE.Group();
-    windowGroup.position.set(2.35, 2.05, -1.77);
-
-    const windowFrameMat = new THREE.MeshStandardMaterial({
-      map: warmWoodTex,
-      color: 0x9c673b,
-      roughness: 0.52,
-      metalness: 0.04
-    });
-
-    const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(1.52, 1.72, 0.1), windowFrameMat);
-    windowGroup.add(outerFrame);
-
-    const treeViewMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.32, 1.52),
-      new THREE.MeshBasicMaterial({ map: windowTreesTex })
-    );
-    treeViewMesh.position.set(0, 0, 0.035);
-    windowGroup.add(treeViewMesh);
-
-    const sillMesh = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.06, 0.18), windowFrameMat);
-    sillMesh.position.set(0, -0.87, 0.04);
-    windowGroup.add(sillMesh);
-
-    const crossH = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.045, 0.045), windowFrameMat);
-    crossH.position.set(0, 0.04, 0.055);
-    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.045, 1.54, 0.045), windowFrameMat);
-    crossV.position.set(0, 0, 0.055);
-    windowGroup.add(crossH, crossV);
-
-    const sunBeamMat = new THREE.MeshBasicMaterial({
-      color: 0xffe09e,
-      transparent: true,
-      opacity: 0.11,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    const sunBeam = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 2.9), sunBeamMat);
-    sunBeam.position.set(-0.55, -0.35, 0.95);
-    sunBeam.rotation.set(0.32, 0.35, 0.24);
-    windowGroup.add(sunBeam);
-
-    scene.add(windowGroup);
-
-    const wallShelfGroup = new THREE.Group();
-    wallShelfGroup.position.set(-2.15, 1.85, -1.73);
-
-    const shelfPlank = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.06, 0.3), windowFrameMat);
-    wallShelfGroup.add(shelfPlank);
-
-    const bracketGeo = new THREE.BoxGeometry(0.05, 0.22, 0.24);
-    const bracketL = new THREE.Mesh(bracketGeo, windowFrameMat);
-    bracketL.position.set(-0.55, -0.13, -0.02);
-    const bracketR = new THREE.Mesh(bracketGeo, windowFrameMat);
-    bracketR.position.set(0.55, -0.13, -0.02);
-    wallShelfGroup.add(bracketL, bracketR);
-
-    const shelfBooks = [
-      { title: 'Clean Code', color: '#8f2424', w: 0.085, h: 0.36, d: 0.22 },
-      { title: 'Designing Data-Intensive Apps', color: '#1d4e89', w: 0.105, h: 0.39, d: 0.23 },
-      { title: 'SICP', color: '#2b6cb0', w: 0.09, h: 0.37, d: 0.22 },
-      { title: 'Introduction to Algorithms', color: '#2c6e49', w: 0.11, h: 0.4, d: 0.24 },
-      { title: 'The Pragmatic Programmer', color: '#9c4221', w: 0.085, h: 0.35, d: 0.21 },
-      { title: 'Haskell Programming', color: '#5b3a8c', w: 0.095, h: 0.37, d: 0.22 }
-    ];
-
-    const pageEdgeMat = new THREE.MeshStandardMaterial({ color: 0xf4ebd9, roughness: 0.85 });
-    const bookGeoCache = new Map();
-    function getBookGeometry(w, h, d) {
-      const key = `${w}_${h}_${d}`;
-      if (!bookGeoCache.has(key)) {
-        bookGeoCache.set(key, new THREE.BoxGeometry(w, h, d));
-      }
-      return bookGeoCache.get(key);
-    }
-
-    let bookCursorX = -0.58;
-    shelfBooks.forEach((b) => {
-      const spineTex = getCachedTexture(
-        `spine_${b.title}_${b.color}`,
-        () => createBookSpineTexture(b.title, b.color),
-        1,
-        1,
-        true
-      );
-      const spineMat = new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.65 });
-      const sideMat = new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.7 });
-
-      const materials = [sideMat, sideMat, pageEdgeMat, pageEdgeMat, spineMat, sideMat];
-      const bookMesh = new THREE.Mesh(getBookGeometry(b.w, b.h, b.d), materials);
-      bookMesh.position.set(bookCursorX + b.w * 0.5, 0.03 + b.h * 0.5, 0.01);
-      wallShelfGroup.add(bookMesh);
-      bookCursorX += b.w + 0.02;
-    });
-
-    scene.add(wallShelfGroup);
-
-    // 3D Desk & Retro CRT Monitor
-    const deskWoodMat = new THREE.MeshStandardMaterial({
-      map: warmWoodTex,
-      roughness: 0.54,
-      metalness: 0.04
-    });
-
-    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.12, 1.75), deskWoodMat);
+    // Desk & CRT Monitor Group
+    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 1.6), deskWoodMat);
     deskTop.position.set(0, 0.58, -0.22);
     scene.add(deskTop);
 
-    const deskPadMat = new THREE.MeshStandardMaterial({ color: 0x171b20, roughness: 0.85 });
-    const deskMat = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.014, 1.05), deskPadMat);
-    deskMat.position.set(0.05, 0.647, -0.08);
-    scene.add(deskMat);
-
-    const legGeo = new THREE.BoxGeometry(0.13, 1.36, 0.13);
-    [
-      [-1.9, -0.1, -0.98],
-      [1.9, -0.1, -0.98],
-      [-1.9, -0.1, 0.54],
-      [1.9, -0.1, 0.54]
-    ].forEach(([lx, ly, lz]) => {
-      const leg = new THREE.Mesh(legGeo, deskWoodMat);
-      leg.position.set(lx, ly, lz);
-      scene.add(leg);
-    });
-
     const crtGroup = new THREE.Group();
-    const beigeCaseMat = new THREE.MeshStandardMaterial({ color: 0xe3d8c4, roughness: 0.54, metalness: 0.03 });
-    const beigeBezelMat = new THREE.MeshStandardMaterial({ color: 0xd4c6ae, roughness: 0.58, metalness: 0.03 });
-    const darkRecessMat = new THREE.MeshStandardMaterial({ color: 0x090D10, roughness: 0.35 });
-    const ventDarkMat = new THREE.MeshStandardMaterial({ color: 0x2a2620, roughness: 0.8 });
+    const beigeCaseMat = new THREE.MeshStandardMaterial({ color: 0xe3d8c4, roughness: 0.55 });
+    const beigeBezelMat = new THREE.MeshStandardMaterial({ color: 0xd4c6ae, roughness: 0.6 });
+    const darkRecessMat = new THREE.MeshStandardMaterial({ color: 0x090D10, roughness: 0.4 });
 
-    const swivelBase = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.41, 0.065, 24), beigeBezelMat);
-    swivelBase.position.set(0, 0.68, -0.34);
-    crtGroup.add(swivelBase);
-
-    const bodyWidth = 1.46;
-    const bodyHeight = 1.22;
-    const bodyDepth = 1.04;
-    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyDepth), beigeCaseMat);
+    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.15, 1.0), beigeCaseMat);
     mainBody.position.set(0, 1.3, -0.35);
     crtGroup.add(mainBody);
 
-    const ventGeo = new THREE.BoxGeometry(0.02, 0.024, 0.42);
-    for (let v = -3; v <= 3; v += 1) {
-      const vent = new THREE.Mesh(ventGeo, ventDarkMat);
-      vent.position.set(bodyWidth * 0.5 + 0.005, 1.35 + v * 0.055, -0.36);
-      crtGroup.add(vent);
-    }
-
-    const screenW = 1.16;
-    const screenH = 0.88;
-    const bezelThick = 0.14;
-    const bezelDepth = 0.12;
-
-    const topBezel = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth + 0.02, bezelThick, bezelDepth), beigeBezelMat);
-    topBezel.position.set(0, 1.3 + screenH * 0.5 + bezelThick * 0.5, 0.18);
-
-    const bottomBezel = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth + 0.02, bezelThick + 0.06, bezelDepth), beigeBezelMat);
-    bottomBezel.position.set(0, 1.3 - screenH * 0.5 - (bezelThick + 0.06) * 0.5, 0.18);
-
-    const leftBezel = new THREE.Mesh(new THREE.BoxGeometry(bezelThick, screenH, bezelDepth), beigeBezelMat);
-    leftBezel.position.set(-screenW * 0.5 - bezelThick * 0.5, 1.3, 0.18);
-
-    const rightBezel = new THREE.Mesh(new THREE.BoxGeometry(bezelThick, screenH, bezelDepth), beigeBezelMat);
-    rightBezel.position.set(screenW * 0.5 + bezelThick * 0.5, 1.3, 0.18);
-
-    crtGroup.add(topBezel, bottomBezel, leftBezel, rightBezel);
-
-    const floppySlot = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.022, 0.03), ventDarkMat);
-    floppySlot.position.set(0.32, 0.77, 0.245);
-    crtGroup.add(floppySlot);
-
-    const powerBtn = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.045, 0.035), beigeCaseMat);
-    powerBtn.position.set(-0.48, 0.77, 0.245);
-    crtGroup.add(powerBtn);
-
-    const ledMat = new THREE.MeshBasicMaterial({ color: 0xffbe2e });
-    const statusLed = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 10), ledMat);
-    statusLed.position.set(-0.36, 0.77, 0.245);
-    crtGroup.add(statusLed);
-
-    const recessBack = new THREE.Mesh(new THREE.PlaneGeometry(screenW + 0.04, screenH + 0.04), darkRecessMat);
-    recessBack.position.set(0, 1.3, 0.145);
+    const screenW = 1.14;
+    const screenH = 0.86;
+    const recessBack = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), darkRecessMat);
+    recessBack.position.set(0, 1.3, 0.15);
     crtGroup.add(recessBack);
 
-    const screenZ = 0.165;
+    const screenZ = 0.16;
     const screenCenterY = 1.3;
     const screenCornersLocal = [
       new THREE.Vector3(-screenW * 0.5, screenCenterY + screenH * 0.5, screenZ),
@@ -1154,302 +797,15 @@
 
     scene.add(crtGroup);
 
-    // Separate 3D Mechanical Keyboard & Sculpted Mouse
-    const kbGroup = new THREE.Group();
-    kbGroup.position.set(-0.14, 0.654, 0.34);
-
-    const kbChassis = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.038, 0.31), beigeCaseMat);
-    kbChassis.position.set(0, 0.019, 0);
-    kbChassis.rotation.x = 0.06;
-    kbGroup.add(kbChassis);
-
-    const keycapMat = new THREE.MeshStandardMaterial({ color: 0xcabca0, roughness: 0.52 });
-    const accentKeyMat = new THREE.MeshStandardMaterial({ color: 0x8f7d60, roughness: 0.55 });
-    const sharedKeyGeo = new THREE.BoxGeometry(0.054, 0.018, 0.046);
-
-    for (let r = 0; r < 4; r += 1) {
-      for (let c = 0; c < 13; c += 1) {
-        const key = new THREE.Mesh(
-          sharedKeyGeo,
-          r === 0 && (c === 0 || c === 12) ? accentKeyMat : keycapMat
-        );
-        key.position.set(-0.42 + c * 0.07, 0.042, -0.105 + r * 0.062);
-        key.rotation.x = 0.06;
-        kbGroup.add(key);
-      }
-    }
-
-    const cableMat = new THREE.MeshStandardMaterial({ color: 0x2c2925, roughness: 0.7 });
-    const kbCableCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.15, 0.035, -0.14),
-      new THREE.Vector3(0.2, 0.02, -0.24),
-      new THREE.Vector3(0.18, 0.01, -0.38)
-    ]);
-    const kbCable = new THREE.Mesh(new THREE.TubeGeometry(kbCableCurve, 12, 0.007, 6, false), cableMat);
-    kbGroup.add(kbCable);
-
-    scene.add(kbGroup);
-
-    const mouseGroup = new THREE.Group();
-    mouseGroup.position.set(0.84, 0.654, 0.35);
-
-    const mouseBody = new THREE.Mesh(new THREE.SphereGeometry(0.068, 18, 16), beigeCaseMat);
-    mouseBody.scale.set(0.92, 0.56, 1.38);
-    mouseBody.position.set(0, 0.032, 0);
-    mouseGroup.add(mouseBody);
-
-    const buttonSplit = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.008, 0.085), ventDarkMat);
-    buttonSplit.position.set(0, 0.064, -0.025);
-    mouseGroup.add(buttonSplit);
-
-    const scrollWheel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.013, 0.013, 0.018, 12),
-      new THREE.MeshStandardMaterial({ color: 0x2f343a, roughness: 0.6 })
-    );
-    scrollWheel.rotation.z = Math.PI * 0.5;
-    scrollWheel.position.set(0, 0.066, -0.028);
-    mouseGroup.add(scrollWheel);
-
-    const mouseCordCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.032, -0.092),
-      new THREE.Vector3(0.03, 0.018, -0.2),
-      new THREE.Vector3(0.12, 0.008, -0.34),
-      new THREE.Vector3(0.24, 0.007, -0.44)
-    ]);
-    const mouseCord = new THREE.Mesh(new THREE.TubeGeometry(mouseCordCurve, 14, 0.0055, 6, false), cableMat);
-    mouseGroup.add(mouseCord);
-
-    scene.add(mouseGroup);
-
-    // Interactive Desk Props: Swimming Trophy, Libyan Flag, Purple Vases & Blue Notebook + Red Pen
-    const trophyGroup = new THREE.Group();
-    trophyGroup.name = 'swimmer_trophy_easteregg';
-    trophyGroup.position.set(-1.38, 0.64, -0.05);
-    trophyGroup.rotation.y = 0.24;
-
-    const marbleBaseMat = new THREE.MeshStandardMaterial({ color: 0x1b1f24, roughness: 0.65, metalness: 0.1 });
-    const trophyPedestal = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.11, 0.26), marbleBaseMat);
-    trophyPedestal.position.set(0, 0.055, 0);
-    trophyGroup.add(trophyPedestal);
-
-    const waveLogoMat = new THREE.MeshStandardMaterial({
-      map: blueWaveTex,
-      roughness: 0.35,
-      metalness: 0.25
-    });
-    const wavePlaque = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.15, 0.022), waveLogoMat);
-    wavePlaque.position.set(0, 0.06, 0.132);
-    trophyGroup.add(wavePlaque);
-
-    const goldCupMat = new THREE.MeshStandardMaterial({ color: 0xf4c430, metalness: 0.88, roughness: 0.2 });
-    const stemMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.075, 0.18, 18), goldCupMat);
-    stemMesh.position.set(0, 0.195, 0);
-    trophyGroup.add(stemMesh);
-
-    const bowlMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.065, 0.22, 20, 1, false), goldCupMat);
-    bowlMesh.position.set(0, 0.38, 0);
-    trophyGroup.add(bowlMesh);
-
-    const handleGeo = new THREE.TorusGeometry(0.085, 0.015, 10, 20, Math.PI);
-    const leftHandle = new THREE.Mesh(handleGeo, goldCupMat);
-    leftHandle.position.set(-0.15, 0.39, 0);
-    leftHandle.rotation.z = Math.PI * 0.5;
-    const rightHandle = new THREE.Mesh(handleGeo, goldCupMat);
-    rightHandle.position.set(0.15, 0.39, 0);
-    rightHandle.rotation.z = -Math.PI * 0.5;
-    trophyGroup.add(leftHandle, rightHandle);
-
-    scene.add(trophyGroup);
-
-    const flagGroup = new THREE.Group();
-    flagGroup.name = 'libyan_flag_easteregg';
-    flagGroup.position.set(1.36, 0.64, -0.22);
-    flagGroup.rotation.y = -0.28;
-
-    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd9b13b, metalness: 0.88, roughness: 0.22 });
-    const flagStandBase = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, 0.032, 20), brassMat);
-    flagStandBase.position.set(0, 0.016, 0);
-
-    const flagMast = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, 0.64, 14), brassMat);
-    flagMast.position.set(0, 0.33, 0);
-
-    const mastFinial = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), brassMat);
-    mastFinial.position.set(0, 0.66, 0);
-
-    const flagClothMat = new THREE.MeshStandardMaterial({
-      map: libyanFlagTex,
-      roughness: 0.62,
-      metalness: 0.02,
-      side: THREE.DoubleSide
-    });
-    const flagBanner = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.24), flagClothMat);
-    flagBanner.position.set(0.235, 0.5, 0.01);
-
-    flagGroup.add(flagStandBase, flagMast, mastFinial, flagBanner);
-    scene.add(flagGroup);
-
-    const purpleCeramicMat = new THREE.MeshStandardMaterial({
-      map: purpleCeramicTex,
-      bumpMap: purpleCeramicBumpTex,
-      bumpScale: 0.006,
-      roughness: 0.36,
-      metalness: 0.08
-    });
-
-    const vasePoints = [
-      new THREE.Vector2(0.0, 0.0),
-      new THREE.Vector2(0.075, 0.0),
-      new THREE.Vector2(0.115, 0.09),
-      new THREE.Vector2(0.105, 0.18),
-      new THREE.Vector2(0.065, 0.24),
-      new THREE.Vector2(0.082, 0.28)
-    ];
-    const sharedVaseGeo = new THREE.LatheGeometry(vasePoints, 22);
-    const sharedSoilGeo = new THREE.CylinderGeometry(0.072, 0.072, 0.015, 14);
-    const sharedSoilMat = new THREE.MeshStandardMaterial({ color: 0x2c1d12, roughness: 0.92 });
-    const sharedStemGeo = new THREE.CylinderGeometry(0.006, 0.008, 0.18, 6);
-    const sharedLeafGeo = new THREE.SphereGeometry(0.052, 10, 8);
-    const leafMatA = new THREE.MeshStandardMaterial({ color: 0x2f7a43, roughness: 0.58 });
-    const leafMatB = new THREE.MeshStandardMaterial({ color: 0x439954, roughness: 0.54 });
-    const stemGreenMat = new THREE.MeshStandardMaterial({ color: 0x245932, roughness: 0.7 });
-    const leafAngles = [0, 1.05, 2.1, 3.15, 4.2, 5.25];
-
-    function buildTexturedPurpleVaseWithPlant(x, y, z, scale = 1.0) {
-      const group = new THREE.Group();
-      group.position.set(x, y, z);
-      group.scale.setScalar(scale);
-
-      const vaseMesh = new THREE.Mesh(sharedVaseGeo, purpleCeramicMat);
-      group.add(vaseMesh);
-
-      const soil = new THREE.Mesh(sharedSoilGeo, sharedSoilMat);
-      soil.position.set(0, 0.265, 0);
-      group.add(soil);
-
-      leafAngles.forEach((ang, idx) => {
-        const stem = new THREE.Mesh(sharedStemGeo, stemGreenMat);
-        stem.position.set(Math.cos(ang) * 0.025, 0.34, Math.sin(ang) * 0.025);
-        stem.rotation.z = -Math.cos(ang) * 0.35;
-        stem.rotation.x = Math.sin(ang) * 0.35;
-        group.add(stem);
-
-        const leaf = new THREE.Mesh(sharedLeafGeo, idx % 2 === 0 ? leafMatA : leafMatB);
-        leaf.scale.set(1.75, 0.24, 0.85);
-        leaf.position.set(Math.cos(ang) * 0.075, 0.41 + (idx % 2) * 0.03, Math.sin(ang) * 0.075);
-        leaf.rotation.y = -ang;
-        leaf.rotation.z = -0.35;
-        group.add(leaf);
-      });
-
-      return group;
-    }
-
-    scene.add(buildTexturedPurpleVaseWithPlant(-1.78, 0.64, -0.35, 1.05));
-    scene.add(buildTexturedPurpleVaseWithPlant(1.78, 0.64, -0.38, 0.95));
-    scene.add(buildTexturedPurpleVaseWithPlant(-1.68, 0.64, 0.32, 0.88));
-
-    const notebookGroup = new THREE.Group();
-    notebookGroup.position.set(1.22, 0.64, 0.26);
-    notebookGroup.rotation.y = -0.22;
-
-    const nbWidth = 0.36;
-    const nbThick = 0.034;
-    const nbDepth = 0.46;
-
-    const blueCoverMat = new THREE.MeshStandardMaterial({
-      map: blueNotebookTex,
-      roughness: 0.55,
-      metalness: 0.05
-    });
-    const pagesEdgeMat = new THREE.MeshStandardMaterial({ color: 0xf7f1e3, roughness: 0.85 });
-    const blueBackMat = new THREE.MeshStandardMaterial({ color: 0x163d73, roughness: 0.6 });
-
-    const nbMaterials = [pagesEdgeMat, blueBackMat, blueCoverMat, blueBackMat, pagesEdgeMat, pagesEdgeMat];
-    const notebookMesh = new THREE.Mesh(new THREE.BoxGeometry(nbWidth, nbThick, nbDepth), nbMaterials);
-    notebookMesh.position.set(0, nbThick * 0.5, 0);
-    notebookGroup.add(notebookMesh);
-
-    const redPenGroup = new THREE.Group();
-    redPenGroup.position.set(0.02, nbThick + 0.013, 0.02);
-    redPenGroup.rotation.y = 0.48;
-
-    const redBodyMat = new THREE.MeshStandardMaterial({ color: 0xd91e2a, roughness: 0.32, metalness: 0.15 });
-    const silverMetalMat = new THREE.MeshStandardMaterial({ color: 0xd8dee6, roughness: 0.22, metalness: 0.88 });
-    const darkNibMat = new THREE.MeshStandardMaterial({ color: 0x1e2228, roughness: 0.4, metalness: 0.5 });
-
-    const penBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.22, 14), redBodyMat);
-    penBarrel.rotation.z = Math.PI * 0.5;
-    redPenGroup.add(penBarrel);
-
-    const tipCone = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.036, 14), redBodyMat);
-    tipCone.rotation.z = -Math.PI * 0.5;
-    tipCone.position.set(0.128, 0, 0);
-    redPenGroup.add(tipCone);
-
-    const nibPoint = new THREE.Mesh(new THREE.ConeGeometry(0.0045, 0.016, 10), darkNibMat);
-    nibPoint.rotation.z = -Math.PI * 0.5;
-    nibPoint.position.set(0.152, 0, 0);
-    redPenGroup.add(nibPoint);
-
-    const trimRing = new THREE.Mesh(new THREE.CylinderGeometry(0.0118, 0.0118, 0.01, 14), silverMetalMat);
-    trimRing.rotation.z = Math.PI * 0.5;
-    trimRing.position.set(-0.075, 0, 0);
-    redPenGroup.add(trimRing);
-
-    const pocketClip = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.004, 0.008), silverMetalMat);
-    pocketClip.position.set(-0.068, 0.013, 0);
-    redPenGroup.add(pocketClip);
-
-    notebookGroup.add(redPenGroup);
-    scene.add(notebookGroup);
-
-    // Balanced Lighting (No Heavy Shadow Map Overhead)
-    const hemiLight = new THREE.HemisphereLight(0xfff6e8, 0xb8936a, 1.05);
+    // Light Setup (Optimized - No Shadows)
+    const hemiLight = new THREE.HemisphereLight(0xfff6e8, 0xb8936a, 1.1);
     scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xffd494, 2.05);
-    sunLight.position.set(3.8, 3.6, 1.4);
+    const sunLight = new THREE.DirectionalLight(0xffd494, 1.8);
+    sunLight.position.set(3.5, 3.5, 1.5);
     scene.add(sunLight);
 
-    const crtGlow = new THREE.PointLight(0xffb000, 0.65, 2.8, 1.8);
-    crtGlow.position.set(0, 1.3, 0.45);
-    scene.add(crtGlow);
-
-    // Pointer Parallax & Raycasting for Desk Easter Eggs
-    let pointerNormX = 0;
-    let pointerNormY = 0;
-    let lastPointerX = 0;
-    let lastPointerY = 0;
-    let sceneDirty = true;
-
-    window.addEventListener('pointermove', (e) => {
-      pointerNormX = (e.clientX / window.innerWidth) * 2 - 1;
-      pointerNormY = (e.clientY / window.innerHeight) * 2 - 1;
-      sceneDirty = true;
-    }, { passive: true });
-
-    const raycaster = new THREE.Raycaster();
-    const mouseNdc = new THREE.Vector2();
-
-    window.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('#crt-screen-ui')) return;
-      mouseNdc.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouseNdc.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouseNdc, camera);
-
-      const hits = raycaster.intersectObjects([trophyGroup, flagGroup], true);
-      if (hits.length > 0) {
-        let obj = hits[0].object;
-        while (obj && obj.parent && !obj.name) obj = obj.parent;
-        if (obj.name === 'swimmer_trophy_easteregg') {
-          triggerEasterEggToast('SWIMMING TROPHY // BLUE DOUBLE-WAVE EMBLEM — ALBANIAN PRO SWIMMER');
-        } else if (obj.name === 'libyan_flag_easteregg') {
-          triggerEasterEggToast('LIBYAN FLAG // CRESCENT MOON & STAR — HERITAGE EASTER EGG');
-        }
-      }
-    });
-
-    // Lock HTML CRT Desktop Overlay to 3D Monitor Screen Corners
+    // 3. THROTTLED MATRIX PROJECTION (Saves CPU/GPU overhead)
     const tempCorner = new THREE.Vector3();
     let lastOverlayCss = '';
 
@@ -1490,83 +846,37 @@
       }
     }
 
+    // Camera Zoom & Idle Animation Loop
     const loadStart = performance.now();
-    const initialZoomMs = 1750;
+    const initialZoomMs = 1200;
     const smoothPos = startCamPos.clone();
     const smoothLook = focusCamLook.clone();
-    const currentGoalPos = new THREE.Vector3();
-
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        sceneDirty = true;
-        syncScreenOverlayTo3D();
-      }
-    });
 
     function animate(now) {
       requestAnimationFrame(animate);
-      if (document.hidden) return;
+      if (document.hidden) return; // Completely skip frame execution if tab is inactive
 
       const elapsed = now - loadStart;
       const rawT = Math.min(1, Math.max(0, elapsed / initialZoomMs));
       const easeOutCubic = 1 - Math.pow(1 - rawT, 3);
 
-      currentGoalPos.lerpVectors(startCamPos, focusCamPos, easeOutCubic);
-
-      const parallaxAmp = 0.065;
-      const targetCamX = currentGoalPos.x + pointerNormX * parallaxAmp;
-      const targetCamY = currentGoalPos.y - pointerNormY * (parallaxAmp * 0.55);
-      const targetCamZ = currentGoalPos.z;
-
-      const targetLookX = focusCamLook.x + pointerNormX * 0.02;
-      const targetLookY = focusCamLook.y - pointerNormY * 0.015;
-      const targetLookZ = focusCamLook.z;
-
-      const posDelta =
-        Math.abs(smoothPos.x - targetCamX) +
-        Math.abs(smoothPos.y - targetCamY) +
-        Math.abs(smoothPos.z - targetCamZ);
-      const lookDelta =
-        Math.abs(smoothLook.x - targetLookX) +
-        Math.abs(smoothLook.y - targetLookY) +
-        Math.abs(smoothLook.z - targetLookZ);
-
-      const pointerMoved =
-        Math.abs(pointerNormX - lastPointerX) > 0.0005 ||
-        Math.abs(pointerNormY - lastPointerY) > 0.0005;
-
-      if (!sceneDirty && posDelta < 0.0004 && lookDelta < 0.0004 && !pointerMoved && rawT >= 1) {
-        return;
-      }
-
-      smoothPos.x += (targetCamX - smoothPos.x) * 0.09;
-      smoothPos.y += (targetCamY - smoothPos.y) * 0.09;
-      smoothPos.z += (targetCamZ - smoothPos.z) * 0.09;
-
-      smoothLook.x += (targetLookX - smoothLook.x) * 0.09;
-      smoothLook.y += (targetLookY - smoothLook.y) * 0.09;
-      smoothLook.z += (targetLookZ - smoothLook.z) * 0.09;
-
+      smoothPos.lerpVectors(startCamPos, focusCamPos, easeOutCubic);
       camera.position.copy(smoothPos);
-      camera.lookAt(smoothLook);
-
-      lastPointerX = pointerNormX;
-      lastPointerY = pointerNormY;
-      sceneDirty = false;
+      camera.lookAt(focusCamLook);
 
       renderer.render(scene, camera);
       syncScreenOverlayTo3D();
     }
 
+    // Trigger initial render sync
+    syncScreenOverlayTo3D();
     requestAnimationFrame(animate);
 
     window.addEventListener('resize', () => {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      sceneDirty = true;
-      lastOverlayCss = '';
       syncScreenOverlayTo3D();
     });
   </script>
