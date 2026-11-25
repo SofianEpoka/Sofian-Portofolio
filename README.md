@@ -4,7 +4,7 @@ An interactive, animated 3D retro computer portfolio set inside a sunlit room, b
 
 ## Live Demo & Links
 
-- **Live Website:** `https://SofianEpoka.github.io/retro-portfolio/` *(update with your exact repo/custom domain URL)*
+- **Live Website:** `https://sofiansarrag.tech/` 
 - **GitHub:** [github.com/SofianEpoka](https://github.com/SofianEpoka)
 - **LinkedIn:** [linkedin.com/in/sofian-sarrag-70ab89193](https://www.linkedin.com/in/sofian-sarrag-70ab89193)
 - **Contact:** `admin@sofiansarrag.tech`
@@ -24,4 +24,4 @@ An interactive, animated 3D retro computer portfolio set inside a sunlit room, b
 
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/SofianEpoka/retro-portfolio.git](https://github.com/SofianEpoka/retro-portfolio.git)
+   git clone [https://github.com/SofianEpoka/Sofian-Portofolio.git](https://github.com/SofianEpoka/Sofian-Portofolio.git)
